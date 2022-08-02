@@ -25,7 +25,7 @@ class Column:
             cursor = row
             for name in names:
                 cursor = cursor[name]
-            return str(cursor)[:max_length] if not styler else styler(cursor, max_length)
+            return styler(cursor, max_length) if styler else str(cursor)[:max_length]
 
         return f
 

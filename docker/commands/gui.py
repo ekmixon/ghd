@@ -178,9 +178,7 @@ class DeploymentsView(Widget):
     @property
     def _selected_ref(self) -> Optional[str]:
         data = self.deployments_table.selected_data
-        if not data:
-            return None
-        return data.ref
+        return data.ref if data else None
 
     def _ref_styler(self, ref: str, max_length: int):
         highlight = colorama.Back.YELLOW + colorama.Fore.BLACK
@@ -237,7 +235,7 @@ class MainView(MultiView[ViewMode]):
 
         self._watch_timer = Timer(5, self.refresh_deployment_statuses)
 
-        self._cached_statuses = dict()
+        self._cached_statuses = {}
 
         self.on["w"] += self._toggle_watch
 
@@ -296,7 +294,7 @@ class MainView(MultiView[ViewMode]):
     async def _reload_deployment_data(self):
         popover(self, "Loading")
 
-        self._cached_statuses = dict()
+        self._cached_statuses = {}
         self._deployments_view.statuses_table.data = []
         self._deployments_view.deployments_table.data = await self._gh.get_deployments(
             environment=self._env_list.current_filter,
@@ -480,15 +478,21 @@ class MainView(MultiView[ViewMode]):
 
         if not recent_deployment:
             return (
-                colorama.Fore.CYAN + "First deployment to this environment" + colorama.Fore.RESET,
-                DeploymentPayload(type=DeploymentType.INITIAL.value, from_ref="", to_ref=ref),
+                f"{colorama.Fore.CYAN}First deployment to this environment{colorama.Fore.RESET}",
+                DeploymentPayload(
+                    type=DeploymentType.INITIAL.value, from_ref="", to_ref=ref
+                ),
             )
+
 
         if recent_deployment.ref == ref:
             return (
-                colorama.Fore.CYAN + "No changes. This is a re-deployment." + colorama.Fore.RESET,
-                DeploymentPayload(type=DeploymentType.REDEPLOY.value, from_ref=ref, to_ref=ref),
+                f"{colorama.Fore.CYAN}No changes. This is a re-deployment.{colorama.Fore.RESET}",
+                DeploymentPayload(
+                    type=DeploymentType.REDEPLOY.value, from_ref=ref, to_ref=ref
+                ),
             )
+
 
         try:
             rollback = False
@@ -499,18 +503,22 @@ class MainView(MultiView[ViewMode]):
                 commits, deployment_ref_found = await self._gh.get_commits_until(recent_deployment.ref, ref)
         except KeyError:
             return (
-                colorama.Fore.RED + "The commit was not found in the repository." + colorama.Fore.RESET,
-                DeploymentPayload(type=DeploymentType.UNDEFINED.value, from_ref="", to_ref=ref),
+                f"{colorama.Fore.RED}The commit was not found in the repository.{colorama.Fore.RESET}",
+                DeploymentPayload(
+                    type=DeploymentType.UNDEFINED.value, from_ref="", to_ref=ref
+                ),
             )
+
 
         if not deployment_ref_found:
             git_log_lines = [
-                colorama.Fore.CYAN + "Commit list suppressed, too many commits to show." + colorama.Fore.RESET,
+                f"{colorama.Fore.CYAN}Commit list suppressed, too many commits to show.{colorama.Fore.RESET}",
                 colorama.Fore.YELLOW
                 + "Due to this, the update type (rollback or roll forward) could not be determined."
                 + colorama.Fore.RESET,
                 "",
             ]
+
             return (
                 "\n".join(git_log_lines),
                 DeploymentPayload(type=DeploymentType.UNDEFINED.value, from_ref=recent_deployment.ref, to_ref=ref),
@@ -529,10 +537,11 @@ class MainView(MultiView[ViewMode]):
 
             def colorize_message(message: str, is_merge_commit: bool):
                 return (
-                    message
-                    if not is_merge_commit
-                    else f"{colorama.Fore.GREEN}{colorama.Style.BRIGHT}{message}{self.style.default}"
+                    f"{colorama.Fore.GREEN}{colorama.Style.BRIGHT}{message}{self.style.default}"
+                    if is_merge_commit
+                    else message
                 )
+
 
             table_data = {
                 "sha": [],
@@ -663,9 +672,8 @@ class MainWindow(StatusBar):
             self.on_resize(self.term.width, self.term.height)
             self.screen.clear()
             super().on_paint()
-        else:
-            self.screen.clear()
-            super().on_paint()
+        self.screen.clear()
+        super().on_paint()
 
         self.screen.output()
 

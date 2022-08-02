@@ -102,10 +102,9 @@ class Widget:
         self.screen.print(self.term.move_xy(x + self.origin_x, y + self.origin_y), output)
 
     def _set_focus_index(self, index: int):
-        if not self.widgets:
-            self.focus_index = 0
-        else:
-            self.focus_index = (index + len(self.widgets)) % len(self.widgets)
+        self.focus_index = (
+            (index + len(self.widgets)) % len(self.widgets) if self.widgets else 0
+        )
 
     @property
     def focused_widget(self) -> Optional["Widget"]:
@@ -154,8 +153,7 @@ class Widget:
         if any(await self.on[key.code or str(key)](self, key)):
             return True
 
-        focused = self.focused_widget
-        if focused:
+        if focused := self.focused_widget:
             return await focused.on_input(key)
         else:
             return False

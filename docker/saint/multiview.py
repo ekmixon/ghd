@@ -13,7 +13,7 @@ class MultiView(Widget, Generic[MultiViewKey]):
     def __init__(self, parent_or_term: Union[Optional[Widget], blessed.Terminal]):
         super().__init__(parent_or_term, False)
         self.current_view: Optional[MultiViewKey] = None
-        self.views: dict[MultiViewKey, Widget] = dict()
+        self.views: dict[MultiViewKey, Widget] = {}
 
     def add(self, key: MultiViewKey, widget: Widget):
         self.views[key] = widget
